@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vatdesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vatdesk}
+      POSTGRES_DB: ${POSTGRES_DB:-vatdesk}
+    volumes:
+      - vatdesk-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vatdesk}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-vatdesk};Username=${POSTGRES_USER:-vatdesk};Password=${POSTGRES_PASSWORD:-vatdesk}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  vatdesk-postgres-data:
