@@ -28,11 +28,16 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 - [x] Phase 1 — UI design via Claude Design, found in `docs/design`
 - [x] Phase 2 — Data contract + sample files (locked; see skill `references/data-contract.md`; samples in skill `assets/`)
 - [x] Phase 3 — Backend: Core models → parsers → validation (V1–V8) → HU strategy → PDF → API endpoints
-- [ ] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
+- [x] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
   - [x] 4.1 — Auth infrastructure + `/login` + app shell + dashboard empty state
   - [x] 4.2 — Upload flow (drag/drop, sample files, processing states)
   - [x] 4.3 — Report view (summary cards, validation panel, category breakdown)
-  - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
+  - [x] 4.4 — Dashboard/history (declarations table + PDF download from list; **filters
+    descoped for the challenge timebox** — `DashboardPage`/`DeclarationsTable` render the
+    full list with no search/filter/sort control. Verified against current code, not
+    memory: `grep -riE "filter|search|sort"` across the dashboard components returns
+    nothing. Every declaration is still reachable — the list itself has no pagination
+    limit — just not filterable.)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
 - [x] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
 - [ ] Phase 7 — Packaging: Dockerfile/compose, Railway deploy, README, AI conversation log export
@@ -54,7 +59,14 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 3. Claude Design: UI generated from written design prompt; synced into implementation
    via Claude Design MCP.
 4. GitHub MCP: repo/commits/PRs managed by Claude Code.
-5. Postgres MCP: live schema/data inspection during debugging.
+5. Railway MCP: project/service inspection, variable configuration, and deploy
+   verification for the Phase 7 deployment (installed and connected mid-session; see
+   `docs/DEPLOYMENT.md`).
+
+Corrected during Phase 7's documentation pass: this list previously also named a
+Postgres MCP. No evidence of one exists in this repo (no MCP config file, no recorded
+use), and the user confirmed on being asked that it was never actually used — removed
+rather than carried forward unverified.
 
 ## Scope guardrails
 
@@ -110,19 +122,21 @@ GET /api/samples/{clean.csv,invalid.csv,nav.xml} (any authenticated user)
   input at upload time), or is the report meant to just be "as of processing date"
   with no period concept? See the "Period" design gap above.
 
-## What Phase 4.4 needs
+## Phase 4.4 — how it actually landed
 
-- `GET /api/declarations` already returns `DeclarationListItemDto[]` (id, filename,
-  format, country, status, the three VAT totals, valid/warning/error row counts,
-  createdAt) — no backend changes anticipated for a basic table.
-- `declarationStatusLabel`/`declarationStatusBadgeVariant` (`lib/declaration-status.ts`)
-  and `formatAmount`/`formatDate` (`lib/format.ts`) are already shared and ready to
-  reuse in a list/table view.
-- `downloadDeclarationPdf(id)` (`api/client.ts`) already streams+saves a PDF — reusable
-  for a per-row download action in the history table without new client code.
-- The dashboard's empty state (`DashboardPage.tsx`) still always renders regardless of
-  whether declarations exist; 4.4 is what replaces it with the real table + wires
-  `GET /api/declarations`.
+Not delivered as its own dedicated session as originally planned — it landed as the fix
+for a reported bug ("already-declared invoices aren't listed on the dashboard"). The root
+cause was exactly what this section used to predict below: `DashboardPage.tsx` never
+called `GET /api/declarations` at all, so it always rendered the empty state regardless
+of whether declarations existed. The fix wired it up (`DeclarationsTable` component,
+reusing the already-shared `declarationStatusLabel`/`formatAmount`/`downloadDeclarationPdf`
+helpers exactly as anticipated) and, while there, also fixed a second real bug found in
+the same pass: `DeclarationRepository.SaveAsync` had hardcoded `UserId = null` with a
+stale "no auth this session" comment left over from before JWT auth existed, so no
+upload had ever recorded who created it — fixed by threading the authenticated user's id
+through, which is what makes the table's "Created by" column meaningful. Filters were
+never part of that bug-fix session's scope and remain descoped — see the 4.4 checkbox
+above.
 
 ## Phase 6 summary (security audit + hardening)
 
@@ -170,7 +184,8 @@ components, per the "extend, never fork" rule.
 
 ## Technical improvements
 
-- **Axios migration** (pure frontend refactor): every `fetch()` call in `frontend/src`
+- **Axios migration** (pure frontend refactor; `dbbfebd`, `a222b82`, `90b1a38`,
+  `074c322`): every `fetch()` call in `frontend/src`
   replaced with a single central axios client (`api/client.ts`) — request interceptor
   attaches auth from the same token source `AuthContext` already used, response
   interceptor normalizes every rejection into one `ApiError` shape (status, title,
@@ -207,7 +222,8 @@ components, per the "extend, never fork" rule.
   (console warning, `downloading` state still resets via `finally`). Pre-existing,
   unchanged by the migration; left as-is per "don't fix silently."
 
-- **`Program.cs` decomposition** (pure backend refactor): `Program.cs` shrunk from 217 to
+- **`Program.cs` decomposition** (pure backend refactor; `e8c9fac`, `9520fc9`, `e958034`,
+  `28fd525`): `Program.cs` shrunk from 217 to
   26 lines — now a table of contents (QuestPDF license → six `Add*` calls → `Build()` →
   one startup task → one pipeline call → `Run()`). All service registrations and the
   entire middleware pipeline moved into `src/VatDesk.Api/Extensions/`, one file per
