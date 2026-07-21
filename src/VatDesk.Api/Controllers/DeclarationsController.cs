@@ -55,7 +55,7 @@ public class DeclarationsController(
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues);
+        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
         var entity = await repository.SaveAsync(file.FileName, parseResult.Format, strategy.CountryCode, summary, cancellationToken);
 
         return Ok(entity.ToDto(registry));

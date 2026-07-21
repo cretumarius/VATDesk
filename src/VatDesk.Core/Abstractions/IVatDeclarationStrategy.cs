@@ -10,5 +10,6 @@ public interface IVatDeclarationStrategy
 
     DeclarationSummary BuildDeclaration(
         IReadOnlyList<TransactionLine> lines,
-        IReadOnlyList<ValidationIssue> parserIssues);
+        IReadOnlyList<ValidationIssue> parserIssues,
+        SourceFormat format);
 }

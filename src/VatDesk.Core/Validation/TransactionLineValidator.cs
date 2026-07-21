@@ -25,7 +25,17 @@ public static partial class TransactionLineValidator
     [GeneratedRegex(@"^[A-Z]{2}[A-Z0-9]{2,12}$")]
     private static partial Regex EuVatIdRegex();
 
-    public static IReadOnlyList<ValidationIssue> Validate(IReadOnlyList<TransactionLine> lines, IVatCategoryRegistry registry)
+    /// <param name="checkDuplicateInvoiceNumbers">
+    /// V8 assumes one TransactionLine == one source record, true for CSV (one row = one record).
+    /// A NAV XML file holds exactly one invoice (data-contract.md section 2), and all of that
+    /// invoice's lines legitimately inherit the same InvoiceNumber + Direction from its header —
+    /// so for XML input this check would flag every line after the first as a false-positive
+    /// "duplicate". Callers pass false for XML-sourced lines to suppress V8 accordingly.
+    /// </param>
+    public static IReadOnlyList<ValidationIssue> Validate(
+        IReadOnlyList<TransactionLine> lines,
+        IVatCategoryRegistry registry,
+        bool checkDuplicateInvoiceNumbers = true)
     {
         var issues = new List<ValidationIssue>();
         var seen = new HashSet<(string InvoiceNumber, Direction Direction)>();
@@ -67,7 +77,7 @@ public static partial class TransactionLineValidator
                 issues.Add(v7);
             }
 
-            if (CheckDuplicateInvoiceNumber(line, seen) is { } v8)
+            if (checkDuplicateInvoiceNumbers && CheckDuplicateInvoiceNumber(line, seen) is { } v8)
             {
                 issues.Add(v8);
             }

@@ -13,9 +13,12 @@ public class HungarianVatDeclarationStrategy(IVatCategoryRegistry registry) : IV
 {
     public string CountryCode => "HU";
 
-    public DeclarationSummary BuildDeclaration(IReadOnlyList<TransactionLine> lines, IReadOnlyList<ValidationIssue> parserIssues)
+    public DeclarationSummary BuildDeclaration(IReadOnlyList<TransactionLine> lines, IReadOnlyList<ValidationIssue> parserIssues, SourceFormat format)
     {
-        var validatorIssues = TransactionLineValidator.Validate(lines, registry);
+        // NAV XML holds exactly one invoice per file; its lines legitimately share one
+        // InvoiceNumber/Direction by design, so V8 duplicate detection would misfire on them.
+        var checkDuplicates = format != SourceFormat.NavXml;
+        var validatorIssues = TransactionLineValidator.Validate(lines, registry, checkDuplicates);
         var allIssues = parserIssues.Concat(validatorIssues).ToList();
 
         var issuesByRow = allIssues

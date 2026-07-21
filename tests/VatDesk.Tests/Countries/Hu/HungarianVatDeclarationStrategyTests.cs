@@ -8,6 +8,21 @@ public class HungarianVatDeclarationStrategyTests
 {
     private readonly HungarianVatCategoryRegistry _registry = new();
     private readonly CsvInvoiceParser _parser = new();
+    private readonly NavXmlInvoiceParser _xmlParser = new();
+
+    [Fact]
+    public async Task SampleNav_MultiLineInvoice_DoesNotFalselyFlagDuplicateInvoiceNumber()
+    {
+        var strategy = new HungarianVatDeclarationStrategy(_registry);
+        await using var stream = SkillFixtures.OpenRead("sample-nav.xml");
+        var parseResult = await _xmlParser.ParseAsync(stream);
+
+        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
+
+        Assert.DoesNotContain(summary.Validation.Issues, i => i.RuleId == "V8");
+        Assert.Equal(3, summary.Validation.ValidRows);
+        Assert.Equal(0, summary.Validation.WarningRows);
+    }
 
     [Fact]
     public async Task SampleClean_ProducesExactGoldenTotals()
@@ -16,7 +31,7 @@ public class HungarianVatDeclarationStrategyTests
         await using var stream = SkillFixtures.OpenRead("sample-clean.csv");
         var parseResult = await _parser.ParseAsync(stream);
 
-        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues);
+        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
 
         Assert.Equal(94300m, summary.TotalOutputVat);
         Assert.Equal(50600m, summary.TotalDeductibleInputVat);
@@ -45,7 +60,7 @@ public class HungarianVatDeclarationStrategyTests
         await using var stream = SkillFixtures.OpenRead("sample-clean.csv");
         var parseResult = await _parser.ParseAsync(stream);
 
-        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues);
+        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
 
         var ordering = summary.PerCategory.Select(c => (c.VatCode, c.Direction)).ToList();
 
@@ -66,7 +81,7 @@ public class HungarianVatDeclarationStrategyTests
         await using var stream = SkillFixtures.OpenRead("sample-invalid.csv");
         var parseResult = await _parser.ParseAsync(stream);
 
-        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues);
+        var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
 
         // Row classification is severity-based regardless of totals inclusion.
         Assert.Equal(1, summary.Validation.ValidRows);

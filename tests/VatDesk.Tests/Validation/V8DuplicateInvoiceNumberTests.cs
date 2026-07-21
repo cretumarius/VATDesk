@@ -46,4 +46,19 @@ public class V8DuplicateInvoiceNumberTests
 
         Assert.Null(issue);
     }
+
+    [Fact]
+    public void Validate_CheckDuplicateInvoiceNumbersFalse_SuppressesV8ForMultiLineInvoices()
+    {
+        var registry = new VatDesk.Infrastructure.Countries.Hu.HungarianVatCategoryRegistry();
+        IReadOnlyList<TransactionLine> lines =
+        [
+            TestLines.Valid(invoiceNumber: "INV-XML-1", direction: Direction.Out, sourceRowNumber: 5),
+            TestLines.Valid(invoiceNumber: "INV-XML-1", direction: Direction.Out, sourceRowNumber: 12),
+        ];
+
+        var issues = TransactionLineValidator.Validate(lines, registry, checkDuplicateInvoiceNumbers: false);
+
+        Assert.DoesNotContain(issues, i => i.RuleId == ValidationRuleIds.DuplicateInvoiceNumber);
+    }
 }
