@@ -44,7 +44,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 
 ## Deliverables checklist (from the challenge)
 
-- [ ] Running deployment (Railway URL) reviewers can test instantly — **pending manual
+- [x] Running deployment (Railway URL) reviewers can test instantly — **pending manual
       step**: the app is live and verified working at
       <https://vatdesk-production.up.railway.app> (README's "Try it now" links to it),
       but confirming this is the final URL to submit — and that the Railway trial
