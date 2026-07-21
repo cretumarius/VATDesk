@@ -206,3 +206,37 @@ components, per the "extend, never fork" rule.
   with no `catch` — if `downloadSample` throws, it's an unhandled promise rejection
   (console warning, `downloading` state still resets via `finally`). Pre-existing,
   unchanged by the migration; left as-is per "don't fix silently."
+
+- **`Program.cs` decomposition** (pure backend refactor): `Program.cs` shrunk from 217 to
+  26 lines — now a table of contents (QuestPDF license → six `Add*` calls → `Build()` →
+  one startup task → one pipeline call → `Run()`). All service registrations and the
+  entire middleware pipeline moved into `src/VatDesk.Api/Extensions/`, one file per
+  concern, with every existing order-dependency comment (forwarded headers before
+  HSTS/HTTPS-redirection, security headers before static files/the SPA fallback, auth
+  before the rate limiter) preserved verbatim rather than summarized. Proven
+  behavior-identical by the still-green integration suite (93/93, same count as before)
+  plus a live docker-compose pass: security headers on API responses, a static asset, and
+  a genuine 404; anonymous 401 and viewer 403 on protected endpoints; login rate limiting
+  tripping at the same threshold; the SPA fallback serving a deep link; and the fail-fast
+  JWT-key startup guard producing the identical error message (now attributed to
+  `AuthenticationServiceCollectionExtensions` in the stack trace — the one expected,
+  harmless difference). Extension inventory:
+
+  | Extension | Target | Concern |
+  |---|---|---|
+  | `AddPersistenceServices` | `IServiceCollection, IConfiguration` | DbContext + repositories |
+  | `AddDomainServices` | `IServiceCollection` | Parsers, PDF renderer, the `AddCountry` extensibility seam |
+  | `AddAuthenticationServices` | `IServiceCollection, IConfiguration` | JWT bearer + the fail-fast key guard |
+  | `AddAuthorizationPolicies` | `IServiceCollection` | Bare `AddAuthorization()` — no named policies exist yet |
+  | `AddApiSecurity` | `IServiceCollection, IConfiguration` | CORS + rate limiter policies |
+  | `AddApiInfrastructure` | `WebApplicationBuilder` | Controllers, ProblemDetails, exception handler, Kestrel + multipart size limits (needs the full builder since Kestrel config lives on `.WebHost`) |
+  | `ApplyMigrationsAsync` | `WebApplication` | The one startup task (EF Core migrations) |
+  | `UseVatDeskPipeline` | `WebApplication` | The entire ordered middleware pipeline, kept as one method rather than split into stages since the ordering contract has non-local dependencies |
+
+  Found during refactor, not fixed: `AddAuthorizationPolicies` has no named
+  `AuthorizationPolicy` objects to configure — every role check is an
+  `[Authorize(Roles=...)]` attribute on a controller. Kept the method (with that noted in
+  its doc comment) so a future named policy has an obvious home, rather than folding it
+  into another extension. No ordering bugs found in the existing pipeline — the two shapes
+  the task specifically warned about (headers registered after the SPA fallback,
+  rate-limiter before auth) were both already correct going in.
