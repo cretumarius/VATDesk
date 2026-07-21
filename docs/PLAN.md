@@ -12,7 +12,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 | Database | PostgreSQL, EF Core + Npgsql, migrations auto-applied on startup |
 | PDF | QuestPDF (Community license) |
 | Packaging | Multi-stage Dockerfile; docker-compose (app + postgres); single deployable unit (API serves built React app) |
-| Deployment | Azure (Web App for Containers / Container Apps); Railway as fallback |
+| Deployment | Railway (Dockerfile-based, connected to the GitHub repo, auto-deploys on push to `main`). Originally targeted Azure (Web App for Containers / Container Apps) with Railway as fallback — revised during Phase 7: Railway gives zero-friction reviewer access and the fastest path to a running demo; Azure remains a documented alternative (and the company's internal stack — see `docs/DEPLOYMENT.md`'s "deploying to Azure instead" section), but its setup overhead didn't fit the challenge timebox. |
 | Input formats | CSV (primary) + NAV 3.0-flavored XML; format by content sniffing |
 | Declaration output | v1 = summary totals per VAT category, split OUT/IN, with net VAT payable (NOT the official 2465A form line structure) |
 | Persistence | Aggregates + validation issues only; raw invoice rows NOT stored (PII tradeoff, documented) |
@@ -35,11 +35,11 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
   - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
 - [x] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
-- [ ] Phase 7 — Packaging: Dockerfile/compose, Azure deploy, README, AI conversation log export
+- [ ] Phase 7 — Packaging: Dockerfile/compose, Railway deploy, README, AI conversation log export
 
 ## Deliverables checklist (from the challenge)
 
-- [ ] Running deployment (Azure URL) reviewers can test instantly
+- [ ] Running deployment (Railway URL) reviewers can test instantly
 - [ ] GitHub repository URL
 - [ ] AI conversation log (planning session + Claude Code sessions), unedited
 - [ ] README: run instructions, sample files, demo credentials, architecture diagram,

@@ -1,7 +1,9 @@
 # VATDesk — Hungarian VAT Declaration Generator
 
 Coding challenge project (TaxDesk). ASP.NET Core 8 API + React/TypeScript (Vite) +
-PostgreSQL, single Docker deployable, target: Azure.
+PostgreSQL, single Docker deployable, deployed on Railway (originally targeted Azure;
+see `docs/PLAN.md`'s locked decisions and `docs/DEPLOYMENT.md` for the pivot and what
+an Azure deployment would look like instead).
 
 ## Read these before non-trivial work
 

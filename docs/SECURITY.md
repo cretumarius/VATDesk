@@ -17,15 +17,15 @@ the checklist item number).
 | 5 | AuthZ | **Implemented** | Full endpoint inventory checked against the skill's API table — every route has the correct role policy; no accidentally-anonymous endpoint. `GET /api/health` is intentionally anonymous (standard load-balancer probe pattern). |
 | 6 | Rate limiting | **Implemented** | Login: 8/min, partitioned by client IP (pre-auth). Upload: 20/min, partitioned by authenticated user id — added this session, along with reordering `UseAuthentication`/`UseAuthorization` before `UseRateLimiter` (the original order made claims-based partitioning silently degrade to IP-based). |
 | 7 | CORS | **Implemented** | Explicit named policy, locked to zero origins by default (never `*`); opts in exactly one origin via `Cors:AllowedOrigin` config if a split-origin deployment is ever needed. Moot in the actual prod topology (single-origin), but configured rather than omitted, per the checklist. |
-| 8 | Headers | **Implemented** | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and a CSP scoped to what the app actually loads (verified against the built frontend, not guessed) on every response — API, static files, and the SPA fallback alike. `UseHsts()` + `UseForwardedHeaders()` for the Azure PaaS topology (TLS terminates at the platform edge). See [Headers section](#headers-in-detail) below. |
+| 8 | Headers | **Implemented** | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and a CSP scoped to what the app actually loads (verified against the built frontend, not guessed) on every response — API, static files, and the SPA fallback alike. `UseHsts()` + `UseForwardedHeaders()` for the Railway PaaS topology (TLS terminates at the platform edge — deployment target changed from Azure to Railway during Phase 7, but this reasoning holds for either). See [Headers section](#headers-in-detail) below. |
 | 9 | Errors | **Implemented** | `GlobalExceptionHandler` always returns a generic ProblemDetails body with no exception detail (unconditional — not just prod-gated) and logs full detail server-side. A real bug was found and fixed here: `WriteAsJsonAsync`'s default overload was silently overwriting the `application/problem+json` content type back to plain `application/json`. |
 | 10 | CSV export | **N/A** | No CSV/spreadsheet export exists in v1 (PDF only). A code comment documenting the required formula-injection defense (`=`/`+`/`-`/`@` cell prefix) is in place at the natural location a future export endpoint would live (`DeclarationsController.cs`). |
 | 11 | Secrets | **Implemented** | `.env` git-ignored, `.env.example` tracked with generation instructions, docker-compose consumes everything via env-var substitution, `appsettings.json`'s connection string is a trivial local-only default overridden by env var in any real run. The one real gap found — a working JWT key committed as `docker-compose.yml`'s fallback default — is fixed (see #4). |
 
 ## Headers in detail
 
-Live example (docker compose, simulating Azure's edge with `X-Forwarded-Proto: https`
-and a real hostname):
+Live example (docker compose, simulating a TLS-terminating platform edge like Railway's
+or Azure's with `X-Forwarded-Proto: https` and a real hostname):
 
 ```
 HTTP/1.1 200 OK
@@ -109,10 +109,11 @@ multi-tenancy is ever added — out of this session's and this app's current sco
   reachable), so the blast radius of a leaked default is far smaller. Still overridable
   via `.env`.
 - **`ForwardedHeadersOptions.KnownNetworks`/`KnownProxies` cleared**: trusts
-  `X-Forwarded-Proto`/`X-Forwarded-For` from any remote address, since Azure's edge IPs
-  aren't known in advance. Safe under the assumption that a trusted proxy (Azure's
-  platform edge) always sits in front in any real deployment; direct internet exposure of
-  this container bypassing that edge is out of scope for a demo app.
+  `X-Forwarded-Proto`/`X-Forwarded-For` from any remote address, since the deployment
+  platform's edge IPs (Railway's, or Azure's if redeployed there) aren't known in
+  advance. Safe under the assumption that a trusted proxy (the platform edge) always
+  sits in front in any real deployment; direct internet exposure of this container
+  bypassing that edge is out of scope for a demo app.
 - **CSP `style-src 'unsafe-inline'`**: required for Radix UI's runtime-injected
   positioning styles (dropdown menu, tooltip). See [Headers in detail](#headers-in-detail).
 
