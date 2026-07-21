@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using VatDesk.Api.Auth;
 using VatDesk.Api.Dtos;
 using VatDesk.Core.Abstractions;
 using VatDesk.Infrastructure.Parsing;
@@ -26,6 +28,7 @@ public class DeclarationsController(
     [Authorize(Roles = "Admin")]
     [HttpPost]
     [RequestSizeLimit(ParserFactory.MaxFileSizeBytes)]
+    [EnableRateLimiting(RateLimiterPolicies.Upload)]
     public async Task<ActionResult<DeclarationDto>> Upload(IFormFile? file, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
