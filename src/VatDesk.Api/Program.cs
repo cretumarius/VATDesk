@@ -173,10 +173,15 @@ app.UseCors(CorsPolicies.AppOrigin);
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseRateLimiter();
-
+// Must come before UseRateLimiter: the upload policy partitions by the authenticated
+// user's claim, which only exists on HttpContext.User once UseAuthentication has run. If
+// this were reversed, that partition key would always read as unauthenticated and every
+// request would silently fall back to the IP-based branch instead — not what "per-user"
+// means. Login's policy is IP-based and pre-auth by nature, so it's unaffected either way.
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 
