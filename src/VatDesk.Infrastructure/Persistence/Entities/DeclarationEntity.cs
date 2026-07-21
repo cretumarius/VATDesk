@@ -5,7 +5,10 @@ namespace VatDesk.Infrastructure.Persistence.Entities;
 public class DeclarationEntity
 {
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
+
+    // Nullable: this session ships no auth (Phase 5), so uploads are anonymous. Becomes
+    // required once JWT auth lands and every request carries an authenticated user.
+    public Guid? UserId { get; set; }
     public string SourceFilename { get; set; } = null!;
     public SourceFormat SourceFormat { get; set; }
     public string CountryCode { get; set; } = null!;

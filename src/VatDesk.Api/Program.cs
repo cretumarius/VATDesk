@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using VatDesk.Core.Abstractions;
+using VatDesk.Infrastructure;
+using VatDesk.Infrastructure.Countries.Hu;
 using VatDesk.Infrastructure.Parsing;
 using VatDesk.Infrastructure.Persistence;
+using VatDesk.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +17,11 @@ builder.Services.AddSingleton<IInvoiceParser, CsvInvoiceParser>();
 builder.Services.AddSingleton<IInvoiceParser, NavXmlInvoiceParser>();
 builder.Services.AddSingleton<ParserFactory>();
 
-// Country strategies register here per country code once real implementations exist, e.g.:
-//   builder.Services.AddCountry<HungarianVatCategoryRegistry, HungarianVatDeclarationStrategy>("HU");
-// Next session: HU registry + strategy + parsers land in VatDesk.Infrastructure.
+// v1 hard-defaults to "HU"; endpoints resolve it via [FromKeyedServices("HU")], and the
+// GET /api/countries/{cc}/vat-categories endpoint resolves by the route's country code key.
+builder.Services.AddCountry<HungarianVatCategoryRegistry, HungarianVatDeclarationStrategy>("HU");
+
+builder.Services.AddScoped<DeclarationRepository>();
 
 var app = builder.Build();
 
