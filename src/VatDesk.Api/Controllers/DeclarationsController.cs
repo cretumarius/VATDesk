@@ -105,4 +105,9 @@ public class DeclarationsController(
 
         return File(pdfBytes, "application/pdf", $"vatdesk-declaration-{entity.Id}.pdf");
     }
+
+    // No CSV/spreadsheet export exists in v1 (security checklist item 10 is N/A). If one
+    // is ever added here, every cell must be checked for a leading =, +, -, or @ and
+    // prefixed with a ' before writing — formula-injection defense for anyone who opens
+    // the export in Excel/Sheets. Don't skip this just because it "worked" without it.
 }
