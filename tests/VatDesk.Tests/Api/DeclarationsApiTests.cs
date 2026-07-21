@@ -2,7 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using VatDesk.Api.Dtos;
+using VatDesk.Core.Abstractions;
 using VatDesk.Core.Models;
 
 namespace VatDesk.Tests.Api;
@@ -150,6 +154,44 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
         var bytes = await pdfResponse.Content.ReadAsByteArrayAsync();
         Assert.NotEmpty(bytes);
         Assert.Equal("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+    }
+
+    /// <summary>Security checklist item 9: an unhandled exception must never reach the client as a stack trace or exception message — only a generic ProblemDetails body, with the real detail logged server-side instead.</summary>
+    [Fact]
+    public async Task GetPdf_WhenRendererThrows_Returns500WithoutStackTraceOrExceptionMessage()
+    {
+        using var setupClient = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
+        var uploadResponse = await UploadAsync(setupClient, "sample-clean.csv", "text/csv");
+        var dto = await uploadResponse.Content.ReadFromJsonAsync<DeclarationDto>(JsonOptions);
+
+        const string secretExceptionMessage = "boom: /etc/shadow read failed at line 42";
+        await using var throwingFactory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.Replace(ServiceDescriptor.Singleton<IReportRenderer>(
+                    new ThrowingReportRenderer(secretExceptionMessage)))));
+
+        using var client = throwingFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = setupClient.DefaultRequestHeaders.Authorization;
+
+        var response = await client.GetAsync($"/api/declarations/{dto!.Id}/pdf");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(secretExceptionMessage, body);
+        Assert.DoesNotContain(nameof(ThrowingReportRenderer), body);
+        Assert.DoesNotContain("StackTrace", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" at ", body); // shape of a serialized .NET stack frame
+    }
+
+    private class ThrowingReportRenderer(string message) : IReportRenderer
+    {
+        public Task<byte[]> RenderAsync(
+            DeclarationSummary summary,
+            DeclarationMetadata metadata,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException(message);
     }
 
     [Fact]

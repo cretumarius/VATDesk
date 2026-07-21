@@ -14,8 +14,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         logger.LogError(exception, "Unhandled exception processing {Method} {Path}", httpContext.Request.Method, httpContext.Request.Path);
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        httpContext.Response.ContentType = "application/problem+json";
 
+        // The parameterless-contentType overload of WriteAsJsonAsync sets its own
+        // "application/json" content type regardless of what's assigned beforehand — the
+        // contentType argument here is the only thing that actually makes this RFC 7807
+        // ProblemDetails, not silently plain JSON (caught by a test that checks the header).
         await httpContext.Response.WriteAsJsonAsync(
             new ProblemDetails
             {
@@ -23,6 +26,8 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                 Title = "An unexpected error occurred.",
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
             },
+            options: null,
+            contentType: "application/problem+json",
             cancellationToken);
 
         return true;
