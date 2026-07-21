@@ -13,6 +13,29 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    Sample files served by SamplesController: source of truth stays the skill's assets/
+    folder (never duplicated in git). Copied into the build/publish output under
+    samples/ so the controller can read them from AppContext.BaseDirectory at runtime.
+  -->
+  <ItemGroup>
+    <Content Include="..\..\.claude\skills\hungarian-vat\assets\sample-clean.csv">
+      <Link>samples\sample-clean.csv</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\.claude\skills\hungarian-vat\assets\sample-invalid.csv">
+      <Link>samples\sample-invalid.csv</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\.claude\skills\hungarian-vat\assets\sample-nav.xml">
+      <Link>samples\sample-nav.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

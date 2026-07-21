@@ -18,6 +18,9 @@ COPY src/VatDesk.Infrastructure/VatDesk.Infrastructure.csproj src/VatDesk.Infras
 COPY src/VatDesk.Api/VatDesk.Api.csproj src/VatDesk.Api/
 COPY tests/VatDesk.Tests/VatDesk.Tests.csproj tests/VatDesk.Tests/
 COPY src/ src/
+# VatDesk.Api.csproj copies these into the publish output (samples/) at build time —
+# source of truth stays the skill assets, never duplicated into src/.
+COPY .claude/skills/hungarian-vat/assets/ .claude/skills/hungarian-vat/assets/
 RUN dotnet publish src/VatDesk.Api/VatDesk.Api.csproj -c Release -o /app/publish
 
 # --- Stage 3: runtime ---
