@@ -1,5 +1,5 @@
 import { clearSession, getToken } from '@/lib/auth-storage'
-import type { DeclarationDto, HealthResponse, LoginRequestDto, LoginResponseDto, MeDto } from './types'
+import type { DeclarationDto, HealthResponse, LoginRequestDto, LoginResponseDto, MeDto, VatCategoryDto } from './types'
 
 export type SampleFileName = 'clean.csv' | 'invalid.csv' | 'nav.xml'
 
@@ -100,12 +100,13 @@ export function uploadDeclaration(file: File, signal?: AbortSignal): Promise<Dec
   return apiFetch<DeclarationDto>('/api/declarations', { method: 'POST', body: formData, signal })
 }
 
-async function fetchSampleBlob(name: SampleFileName): Promise<Blob> {
+/** Shared by any endpoint that returns a binary body (samples, PDF) rather than JSON — apiFetch always parses JSON, so those go through here instead. */
+async function authedBlobFetch(path: string): Promise<Blob> {
   const token = getToken()
   const headers = new Headers()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const response = await fetch(`/api/samples/${name}`, { headers })
+  const response = await fetch(path, { headers })
 
   if (response.status === 401) {
     clearSession()
@@ -123,6 +124,10 @@ async function fetchSampleBlob(name: SampleFileName): Promise<Blob> {
   return response.blob()
 }
 
+function fetchSampleBlob(name: SampleFileName): Promise<Blob> {
+  return authedBlobFetch(`/api/samples/${name}`)
+}
+
 /** Fetches a sample and returns it as a File, for the upload page's "use sample" buttons. */
 export async function fetchSampleAsFile(name: SampleFileName): Promise<File> {
   const blob = await fetchSampleBlob(name)
@@ -130,18 +135,41 @@ export async function fetchSampleAsFile(name: SampleFileName): Promise<File> {
   return new File([blob], `sample-${name}`, { type })
 }
 
-/** Fetches a sample and saves it to disk — plain <a href> can't carry the auth header. */
-export async function downloadSample(name: SampleFileName): Promise<void> {
-  const blob = await fetchSampleBlob(name)
+function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   try {
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `sample-${name}`
+    anchor.download = filename
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+/** Fetches a sample and saves it to disk — plain <a href> can't carry the auth header. */
+export async function downloadSample(name: SampleFileName): Promise<void> {
+  const blob = await fetchSampleBlob(name)
+  saveBlob(blob, `sample-${name}`)
+}
+
+/** Streams the declaration PDF and saves it to disk. Available to both roles. */
+export async function downloadDeclarationPdf(id: string): Promise<void> {
+  const blob = await authedBlobFetch(`/api/declarations/${id}/pdf`)
+  saveBlob(blob, `declaration-${id.slice(0, 8)}.pdf`)
+}
+
+const vatCategoriesCache = new Map<string, Promise<VatCategoryDto[]>>()
+
+/** Registry is fixed per country for the lifetime of the tab — cached so every report/upload view doesn't refetch it. */
+export function getVatCategories(countryCode: string): Promise<VatCategoryDto[]> {
+  let cached = vatCategoriesCache.get(countryCode)
+  if (!cached) {
+    cached = apiFetch<VatCategoryDto[]>(`/api/countries/${countryCode}/vat-categories`)
+    cached.catch(() => vatCategoriesCache.delete(countryCode))
+    vatCategoriesCache.set(countryCode, cached)
+  }
+  return cached
 }

@@ -6,7 +6,7 @@ import { AppShell } from '@/components/shell/AppShell'
 import { AuthProvider } from '@/context/AuthContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { DeclarationStubPage } from '@/pages/DeclarationStubPage'
+import { DeclarationReportPage } from '@/pages/DeclarationReportPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { UploadPage } from '@/pages/UploadPage'
 
@@ -20,7 +20,7 @@ function App() {
             <Route element={<RequireAuth />}>
               <Route element={<AppShell />}>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/declarations/:id" element={<DeclarationStubPage />} />
+                <Route path="/declarations/:id" element={<DeclarationReportPage />} />
                 <Route element={<RequireRoleRoute role="Admin" />}>
                   <Route path="/declarations/new" element={<UploadPage />} />
                 </Route>
