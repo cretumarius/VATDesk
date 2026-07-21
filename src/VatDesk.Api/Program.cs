@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -156,6 +157,30 @@ app.UseExceptionHandler();
 // Turns bare 401/403/404 responses from auth/authorization middleware into ProblemDetails
 // bodies via the IProblemDetailsService registered above.
 app.UseStatusCodePages();
+
+// UseHsts() (below) only ever sets the header when Request.IsHttps is true — verified
+// empirically, not assumed. The deployment target (Azure Web App for Containers /
+// Container Apps) terminates TLS at the platform edge and forwards plain HTTP to this
+// container, so without reading X-Forwarded-Proto, IsHttps would always be false and HSTS
+// would be silently dead in the one place it actually matters. Confirmed live: curl with
+// X-Forwarded-Proto: https and a real hostname (not "localhost" — HstsMiddleware skips
+// that specific Host value regardless of scheme) returns the header; without either one,
+// it doesn't. KnownNetworks/KnownProxies are cleared because the specific edge IPs aren't
+// known in advance — an accepted tradeoff for this PaaS deployment model
+// (docs/SECURITY.md): a trusted proxy is assumed to sit in front in any real deployment;
+// direct internet exposure of this container (bypassing Azure's edge) is out of scope for
+// a demo app. The same forwarded X-Forwarded-For also makes the login rate limiter's
+// per-IP partitioning see the real client IP instead of Azure's edge IP for every request.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+// The default KnownNetworks/KnownProxies (loopback only) would reject Azure's edge as an
+// untrusted proxy — cleared, not left at their default, since "= { }" on an
+// already-populated collection property adds nothing rather than clearing it.
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 if (!app.Environment.IsDevelopment())
 {
