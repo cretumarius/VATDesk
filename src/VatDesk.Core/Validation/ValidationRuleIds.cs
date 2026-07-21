@@ -11,4 +11,7 @@ public static class ValidationRuleIds
     public const string GrossAmountMismatch = "V6";
     public const string PartnerTaxNumberFormat = "V7";
     public const string DuplicateInvoiceNumber = "V8";
+
+    /// <summary>File-level informational notices (missing Direction column, ignored unknown columns) — not a row rule.</summary>
+    public const string FileNotice = "INFO";
 }

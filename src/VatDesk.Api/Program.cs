@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using VatDesk.Core.Abstractions;
+using VatDesk.Infrastructure.Parsing;
 using VatDesk.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,10 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<VatDeskDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddSingleton<IInvoiceParser, CsvInvoiceParser>();
+builder.Services.AddSingleton<IInvoiceParser, NavXmlInvoiceParser>();
+builder.Services.AddSingleton<ParserFactory>();
 
 // Country strategies register here per country code once real implementations exist, e.g.:
 //   builder.Services.AddCountry<HungarianVatCategoryRegistry, HungarianVatDeclarationStrategy>("HU");
