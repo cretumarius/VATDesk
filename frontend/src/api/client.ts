@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 
+import { cached, clearApiCache } from './cache'
 import { clearSession, getToken } from '@/lib/auth-storage'
 import type {
   DeclarationDto,
@@ -96,6 +97,7 @@ apiClient.interceptors.response.use(
 
     if (status === 401 && !isLoginRequest) {
       clearSession()
+      clearApiCache()
       if (window.location.pathname !== '/login') {
         const redirect = encodeURIComponent(window.location.pathname + window.location.search)
         window.location.assign(`/login?redirect=${redirect}`)
@@ -114,8 +116,9 @@ export function loginRequest(credentials: LoginRequestDto): Promise<LoginRespons
   return apiClient.post<LoginResponseDto>(LOGIN_PATH, credentials).then((r) => r.data)
 }
 
+/** Cached until logout or a 401 — see cache.ts's policy comment. */
 export function getMe(): Promise<MeDto> {
-  return apiClient.get<MeDto>('/api/auth/me').then((r) => r.data)
+  return cached('me', () => apiClient.get<MeDto>('/api/auth/me').then((r) => r.data))
 }
 
 export function getDeclarations(): Promise<DeclarationListItemDto[]> {
@@ -176,15 +179,9 @@ export async function downloadDeclarationPdf(id: string): Promise<void> {
   saveBlob(blob, `declaration-${id.slice(0, 8)}.pdf`)
 }
 
-const vatCategoriesCache = new Map<string, Promise<VatCategoryDto[]>>()
-
-/** Registry is fixed per country for the lifetime of the tab — cached so every report/upload view doesn't refetch it. */
+/** Registry is fixed per country for the session — cached so every report/upload view doesn't refetch it. See cache.ts's policy comment. */
 export function getVatCategories(countryCode: string): Promise<VatCategoryDto[]> {
-  let cached = vatCategoriesCache.get(countryCode)
-  if (!cached) {
-    cached = apiClient.get<VatCategoryDto[]>(`/api/countries/${countryCode}/vat-categories`).then((r) => r.data)
-    cached.catch(() => vatCategoriesCache.delete(countryCode))
-    vatCategoriesCache.set(countryCode, cached)
-  }
-  return cached
+  return cached(`vat-categories:${countryCode}`, () =>
+    apiClient.get<VatCategoryDto[]>(`/api/countries/${countryCode}/vat-categories`).then((r) => r.data),
+  )
 }

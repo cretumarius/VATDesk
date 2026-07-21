@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
+import { clearApiCache } from '@/api/cache'
 import { loginRequest } from '@/api/client'
 import { clearSession, getStoredUser, getToken, setSession, type StoredUser } from '@/lib/auth-storage'
 
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession()
+    clearApiCache()
     setToken(null)
     setUser(null)
   }, [])
