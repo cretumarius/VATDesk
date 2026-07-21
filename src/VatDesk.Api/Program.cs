@@ -90,6 +90,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Locked to a single configurable origin (security checklist item 7). Moot in the actual
+// prod topology — the API serves the built SPA from its own origin, so no browser request
+// is ever cross-origin — but kept explicit rather than omitted, and never "*". Only
+// relevant if the app is ever split across two origins (e.g. a separately hosted frontend).
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicies.AppOrigin, policy =>
+    {
+        var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"];
+        if (!string.IsNullOrWhiteSpace(allowedOrigin))
+        {
+            policy.WithOrigins(allowedOrigin).AllowAnyHeader().AllowAnyMethod();
+        }
+    });
+});
+
 // Tight window on login specifically (security checklist item 6); partitioned by client IP
 // so one attacker can't lock out every other user sharing the policy.
 builder.Services.AddRateLimiter(options =>
@@ -141,6 +157,8 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseHttpsRedirection();
+
+app.UseCors(CorsPolicies.AppOrigin);
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
