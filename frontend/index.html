@@ -10,15 +10,7 @@
       rel="stylesheet"
     />
     <title>VATDesk</title>
-    <script>
-      // Applied before paint to avoid a flash of the wrong theme. Mirrors the logic in
-      // src/lib/theme.ts — keep the two in sync if the storage key/preference logic changes.
-      (function () {
-        var stored = localStorage.getItem('vatdesk-theme');
-        var isDark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) document.documentElement.classList.add('dark');
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

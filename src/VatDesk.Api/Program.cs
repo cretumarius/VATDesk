@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
 using VatDesk.Api.Auth;
 using VatDesk.Api.ErrorHandling;
+using VatDesk.Api.Middleware;
 using VatDesk.Core.Abstractions;
 using VatDesk.Infrastructure;
 using VatDesk.Infrastructure.Countries.Hu;
@@ -156,7 +157,16 @@ app.UseExceptionHandler();
 // bodies via the IProblemDetailsService registered above.
 app.UseStatusCodePages();
 
+if (!app.Environment.IsDevelopment())
+{
+    // Standard pattern: HSTS tells browsers to only ever use HTTPS for this host, so it's
+    // pointless (and would make local http:// docker-compose testing look broken) in dev.
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
+
+app.UseSecurityHeaders();
 
 app.UseCors(CorsPolicies.AppOrigin);
 
