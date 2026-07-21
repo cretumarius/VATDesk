@@ -27,7 +27,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 - [x] Phase 0.5 — Custom Claude skill `hungarian-vat` created and committed
 - [x] Phase 1 — UI design via Claude Design, found in `docs/design`
 - [x] Phase 2 — Data contract + sample files (locked; see skill `references/data-contract.md`; samples in skill `assets/`)
-- [ ] Phase 3 — Backend: Core models → parsers → validation (V1–V8) → HU strategy → PDF → API endpoints
+- [ ] Phase 3 — in progress — skeleton complete: Core models → parsers → validation (V1–V8) → HU strategy → PDF → API endpoints
 - [ ] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
 - [ ] Phase 5 — Auth & authorization (baseline JWT + roles; Entra ID if time allows)
 - [ ] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
