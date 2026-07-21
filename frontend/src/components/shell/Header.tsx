@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { RequireRole } from '@/components/auth/RequireRole'
 import { Avatar } from '@/components/ui/avatar'
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/context/AuthContext'
+import { cn } from '@/lib/utils'
 
 function initialsFor(name: string): string {
   return name
@@ -23,8 +23,15 @@ function initialsFor(name: string): string {
     .toUpperCase()
 }
 
+const navLinkClass = (active: boolean) =>
+  cn(
+    'rounded-lg px-3.5 py-1.5 text-[13.5px]',
+    active ? 'bg-accent font-semibold text-primary' : 'font-medium text-foreground/80 hover:bg-secondary/60',
+  )
+
 export function Header() {
   const { user, logout } = useAuth()
+  const location = useLocation()
 
   if (!user) return null
 
@@ -43,23 +50,13 @@ export function Header() {
       </Link>
 
       <nav className="ml-2 flex gap-1">
-        <Link to="/" className="rounded-lg bg-accent px-3.5 py-1.5 text-[13.5px] font-semibold text-primary">
+        <Link to="/" className={navLinkClass(location.pathname === '/')}>
           Declarations
         </Link>
         <RequireRole role="Admin">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-disabled="true"
-                onClick={(event) => event.preventDefault()}
-                className="cursor-not-allowed rounded-lg px-3.5 py-1.5 text-[13.5px] font-medium text-foreground/70"
-              >
-                New declaration
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Coming soon</TooltipContent>
-          </Tooltip>
+          <Link to="/declarations/new" className={navLinkClass(location.pathname === '/declarations/new')}>
+            New declaration
+          </Link>
         </RequireRole>
       </nav>
 

@@ -1,13 +1,16 @@
 import { Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { RequireRole } from '@/components/auth/RequireRole'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/context/AuthContext'
 
+// Declaration history/listing is Phase 4.4 — this still always shows the empty state,
+// even after a real upload exists, until that session wires GET /api/declarations here.
 export function DashboardPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <main className="mx-auto max-w-[1120px] px-7 pt-9 pb-20">
@@ -17,14 +20,9 @@ export function DashboardPage() {
           <p className="text-sm text-muted-foreground">No declarations on record</p>
         </div>
         <RequireRole role="Admin">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" aria-disabled="true" className="cursor-not-allowed opacity-60">
-                <Plus className="size-4" /> New declaration
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Coming soon</TooltipContent>
-          </Tooltip>
+          <Button type="button" onClick={() => navigate('/declarations/new')}>
+            <Plus className="size-4" /> New declaration
+          </Button>
         </RequireRole>
       </div>
 
@@ -41,14 +39,9 @@ export function DashboardPage() {
             Upload a CSV or NAV 3.0 XML invoice export to generate your first Hungarian VAT declaration summary.
           </p>
           {user?.role === 'Admin' ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" aria-disabled="true" className="cursor-not-allowed opacity-60">
-                  Create your first declaration
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Coming soon</TooltipContent>
-            </Tooltip>
+            <Button type="button" onClick={() => navigate('/declarations/new')}>
+              Create your first declaration
+            </Button>
           ) : (
             <div className="text-[13px] text-subtle-foreground">
               Your role can view and export declarations. Ask an admin to create one.
