@@ -4,6 +4,7 @@ using VatDesk.Core.Validation;
 namespace VatDesk.Core.Abstractions;
 
 public record ParseResult(
+    SourceFormat Format,
     IReadOnlyList<TransactionLine> Lines,
     IReadOnlyList<ValidationIssue> Issues);
 

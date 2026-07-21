@@ -90,7 +90,7 @@ public class NavXmlInvoiceParser : IInvoiceParser
             ParseLine(lineElement, rowNumber, invoiceNumber, issueDate, customerName, supplierTaxNumber, direction, lines, issues);
         }
 
-        return Task.FromResult(new ParseResult(lines, issues));
+        return Task.FromResult(new ParseResult(SourceFormat.NavXml, lines, issues));
     }
 
     private static void ParseLine(

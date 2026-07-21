@@ -74,7 +74,7 @@ public class CsvInvoiceParser : IInvoiceParser
             ParseRow(csv, headerMap, hasDirectionColumn, today, lines, issues);
         }
 
-        return Task.FromResult(new ParseResult(lines, issues));
+        return Task.FromResult(new ParseResult(SourceFormat.Csv, lines, issues));
     }
 
     private static void ParseRow(
