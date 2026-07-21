@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VatDesk.Api.Dtos;
 using VatDesk.Core.Abstractions;
@@ -6,9 +7,9 @@ namespace VatDesk.Api.Controllers;
 
 [ApiController]
 [Route("api/countries")]
+[Authorize]
 public class CountriesController(IServiceProvider serviceProvider) : ControllerBase
 {
-    // TODO(Phase5): require any authenticated user once JWT auth lands.
     [HttpGet("{countryCode}/vat-categories")]
     public ActionResult<IReadOnlyList<VatCategoryDto>> GetVatCategories(string countryCode)
     {

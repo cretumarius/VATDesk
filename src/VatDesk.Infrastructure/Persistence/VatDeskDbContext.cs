@@ -20,6 +20,7 @@ public class VatDeskDbContext(DbContextOptions<VatDeskDbContext> options) : DbCo
             b.Property(e => e.Email).HasColumnName("email").IsRequired();
             b.HasIndex(e => e.Email).IsUnique();
             b.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+            b.Property(e => e.DisplayName).HasColumnName("display_name").IsRequired();
             b.Property(e => e.Role).HasColumnName("role").HasConversion<string>().IsRequired();
             b.Property(e => e.CreatedAt).HasColumnName("created_at");
         });

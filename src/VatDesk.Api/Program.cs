@@ -1,6 +1,12 @@
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
+using VatDesk.Api.Auth;
 using VatDesk.Api.ErrorHandling;
 using VatDesk.Core.Abstractions;
 using VatDesk.Infrastructure;
@@ -34,6 +40,59 @@ builder.Services.AddSingleton<IReportRenderer, QuestPdfReportRenderer>();
 builder.Services.AddCountry<HungarianVatCategoryRegistry, HungarianVatDeclarationStrategy>("HU");
 
 builder.Services.AddScoped<DeclarationRepository>();
+builder.Services.AddScoped<UserRepository>();
+
+// --- Auth: JWT bearer + role policies ---
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+
+var jwtKey = builder.Configuration[$"{JwtOptions.SectionName}:Key"];
+if (string.IsNullOrEmpty(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    // Fail fast: never start with a missing or under-strength signing key. Set via the
+    // Jwt__Key env var (docker-compose / Azure App Settings) or dotnet user-secrets locally.
+    throw new InvalidOperationException(
+        "Jwt:Key is missing or shorter than 32 bytes. Set the Jwt__Key environment variable " +
+        "(or dotnet user-secrets for local dev) to a signing key of at least 32 bytes.");
+}
+
+var jwtIssuer = builder.Configuration[$"{JwtOptions.SectionName}:Issuer"] ?? "VatDesk";
+var jwtAudience = builder.Configuration[$"{JwtOptions.SectionName}:Audience"] ?? "VatDesk";
+
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Tight window on login specifically (security checklist item 6); partitioned by client IP
+// so one attacker can't lock out every other user sharing the policy.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(RateLimiterPolicies.Login, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 8,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
 
 var app = builder.Build();
 
@@ -51,11 +110,18 @@ using (var scope = app.Services.CreateScope())
 
 app.UseExceptionHandler();
 
+// Turns bare 401/403/404 responses from auth/authorization middleware into ProblemDetails
+// bodies via the IProblemDetailsService registered above.
+app.UseStatusCodePages();
+
 app.UseHttpsRedirection();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+app.UseRateLimiter();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using VatDesk.Api.Dtos;
+using VatDesk.Core.Models;
 
 namespace VatDesk.Tests.Api;
 
@@ -20,7 +21,7 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     [Fact]
     public async Task Upload_SampleClean_Returns200WithGoldenTotals()
     {
-        using var client = _factory.CreateClient();
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
 
         var response = await UploadAsync(client, "sample-clean.csv", "text/csv");
 
@@ -42,7 +43,7 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     [Fact]
     public async Task Upload_SampleInvalid_ReturnsCompletedWithWarningsAndRuleIds()
     {
-        using var client = _factory.CreateClient();
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
 
         var response = await UploadAsync(client, "sample-invalid.csv", "text/csv");
 
@@ -62,7 +63,7 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     [Fact]
     public async Task Upload_XxeAttempt_Returns400ProblemDetails()
     {
-        using var client = _factory.CreateClient();
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
         const string maliciousXml = """
             <?xml version="1.0"?>
             <!DOCTYPE InvoiceData [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
@@ -85,9 +86,39 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetPdf_AfterUpload_ReturnsNonEmptyApplicationPdf()
+    public async Task Upload_AsViewer_Returns403()
+    {
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Viewer);
+
+        var response = await UploadAsync(client, "sample-clean.csv", "text/csv");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Upload_Anonymous_Returns401()
     {
         using var client = _factory.CreateClient();
+
+        var response = await UploadAsync(client, "sample-clean.csv", "text/csv");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task List_Anonymous_Returns401()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/api/declarations");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPdf_AfterUpload_ReturnsNonEmptyApplicationPdf()
+    {
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
 
         var uploadResponse = await UploadAsync(client, "sample-clean.csv", "text/csv");
         var dto = await uploadResponse.Content.ReadFromJsonAsync<DeclarationDto>(JsonOptions);
@@ -105,7 +136,7 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     [Fact]
     public async Task GetVatCategories_Hu_ReturnsEightCategories()
     {
-        using var client = _factory.CreateClient();
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Viewer);
 
         var response = await client.GetAsync("/api/countries/HU/vat-categories");
 
@@ -117,7 +148,7 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     [Fact]
     public async Task GetVatCategories_UnknownCountry_Returns404()
     {
-        using var client = _factory.CreateClient();
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Viewer);
 
         var response = await client.GetAsync("/api/countries/RO/vat-categories");
 

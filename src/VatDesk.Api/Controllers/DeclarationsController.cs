@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VatDesk.Api.Dtos;
 using VatDesk.Core.Abstractions;
@@ -6,8 +7,12 @@ using VatDesk.Infrastructure.Persistence.Repositories;
 
 namespace VatDesk.Api.Controllers;
 
+// Class-level [Authorize] requires any authenticated user on every action; Upload adds
+// Roles = "Admin" on top (both apply — authenticated AND Admin), per architecture.md's
+// API table: reads/PDF for any authenticated user, POST for Admin only.
 [ApiController]
 [Route("api/declarations")]
+[Authorize]
 public class DeclarationsController(
     ParserFactory parserFactory,
     [FromKeyedServices("HU")] IVatDeclarationStrategy strategy,
@@ -17,7 +22,7 @@ public class DeclarationsController(
 {
     private static readonly string[] AllowedExtensions = [".csv", ".xml"];
 
-    // TODO(Phase5): [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     [RequestSizeLimit(ParserFactory.MaxFileSizeBytes)]
     public async Task<ActionResult<DeclarationDto>> Upload(IFormFile? file, CancellationToken cancellationToken)
@@ -61,7 +66,6 @@ public class DeclarationsController(
         return Ok(entity.ToDto(registry));
     }
 
-    // TODO(Phase5): [Authorize(Roles = "Admin,Viewer")]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<DeclarationListItemDto>>> List(CancellationToken cancellationToken)
     {
@@ -69,7 +73,6 @@ public class DeclarationsController(
         return Ok(declarations.Select(d => d.ToListItemDto()).ToList());
     }
 
-    // TODO(Phase5): [Authorize(Roles = "Admin,Viewer")]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<DeclarationDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -82,7 +85,6 @@ public class DeclarationsController(
         return Ok(entity.ToDto(registry));
     }
 
-    // TODO(Phase5): [Authorize(Roles = "Admin,Viewer")]
     [HttpGet("{id:guid}/pdf")]
     public async Task<IActionResult> GetPdf(Guid id, CancellationToken cancellationToken)
     {

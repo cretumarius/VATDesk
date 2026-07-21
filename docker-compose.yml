@@ -12,6 +12,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    ports:
+      - "5433:5432"
 
   app:
     build:
@@ -21,6 +23,10 @@ services:
       - "8080:8080"
     environment:
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-vatdesk};Username=${POSTGRES_USER:-vatdesk};Password=${POSTGRES_PASSWORD:-vatdesk}"
+      # Demo-only fallback (same tradeoff as the Postgres credentials above): lets
+      # `docker compose up` work out of the box for reviewers. Any real deployment sets
+      # JWT_KEY via a real secret (Azure App Settings etc.) — never rely on this default.
+      Jwt__Key: "${JWT_KEY:-lvFunuusnSO2w4AOAvJh7IVnyx4+AlnqpM78khacXx++Bl4a3flVQIAL15m8dY4u}"
     depends_on:
       postgres:
         condition: service_healthy
