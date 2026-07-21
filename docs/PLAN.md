@@ -30,7 +30,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 - [x] Phase 3 — Backend: Core models → parsers → validation (V1–V8) → HU strategy → PDF → API endpoints
 - [ ] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
   - [x] 4.1 — Auth infrastructure + `/login` + app shell + dashboard empty state
-  - [ ] 4.2 — Upload flow (drag/drop, sample files, processing states)
+  - [x] 4.2 — Upload flow (drag/drop, sample files, processing states)
   - [ ] 4.3 — Report view (summary cards, validation panel, category breakdown)
   - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
@@ -66,4 +66,22 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 
 POST /api/auth/login · GET /api/countries/{cc}/vat-categories ·
 POST /api/declarations (Admin) · GET /api/declarations ·
-GET /api/declarations/{id} · GET /api/declarations/{id}/pdf
+GET /api/declarations/{id} · GET /api/declarations/{id}/pdf ·
+GET /api/samples/{clean.csv,invalid.csv,nav.xml} (any authenticated user)
+
+## Design gaps (accumulated across sessions)
+
+- **Dark mode** (4.1): not in the design (light-mode only); derived by inverting
+  neutrals, brightening the teal accent, lightening status colors for contrast.
+- **Demo credential copy** (4.1): mockup was a client-only fake login ("any password
+  works"); ours checks a real password, so the demo buttons autofill the real one.
+- **`UserEntity.DisplayName`** (4.1): not in architecture.md's original `users` schema;
+  added (additive) for the JWT display-name claim and the header/account-menu UI.
+- **Format-hint tabs** (4.2): design shows illustrative CSV/XML structure that conflicts
+  with data-contract.md's locked schema (wrong column names, `direction=sales|purchase`
+  instead of `OUT|IN`, a fake XML `invoiceMain`/`lineVatRate`). Skill wins — tabs show
+  the real contract.
+- **Dropzone's third quick-fill button** (4.2): design has "Try a broken file" (demos a
+  structural parse failure); no canonical corrupt-file skill asset exists, so it's
+  "Use sample with warnings" (real sample-invalid.csv) instead, demonstrating
+  CompletedWithWarnings with real data.
