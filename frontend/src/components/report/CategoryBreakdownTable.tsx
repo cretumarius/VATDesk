@@ -189,7 +189,7 @@ export function CategoryBreakdownTable({ perCategory, categories }: CategoryBrea
         <div className="mt-3 flex flex-wrap gap-4 text-[11.5px] text-subtle-foreground">
           {exemptOrReverseChargeCategories.map((c) => (
             <span key={c.code}>
-              <b className="text-muted-foreground">{c.code}</b> {categoryDisplayName(c).toLowerCase()}
+              <b className="text-muted-foreground">{c.code}</b> {categoryDisplayName(c)}
             </span>
           ))}
         </div>
