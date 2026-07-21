@@ -1,33 +1,169 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens, extracted from docs/design/VATDesk.dc.html (the Claude Design export
+ * for VATDesk). Every component must consume these tokens — never hard-code a color,
+ * radius, or font size that already has a token here. Organize additions by the same
+ * grouping (surfaces, text, brand, status, borders, radii, typography).
+ *
+ * The design only defines a light theme. Dark values below are this session's own
+ * derivation (documented as a "Design gap" in the session summary): neutrals are
+ * inverted, the teal brand accent is kept but brightened for contrast on dark
+ * surfaces, and status colors get lighter/desaturated variants for readability.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
+  --radius: 0.625rem; /* 10px — buttons, inputs, small cards. Larger cards use --radius-xl. */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Surfaces */
+  --background: #eceff0;
+  --card: #ffffff;
+  --popover: #ffffff;
 
-  font: 16px/145% var(--sans);
-  color-scheme: light dark;
-  color: var(--text-h);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Text */
+  --foreground: #16201f;
+  --card-foreground: #16201f;
+  --popover-foreground: #16201f;
+  --muted-foreground: #6b7472;
+  --subtle-foreground: #9aa3a1;
+  --table-header-foreground: #8a9391;
+
+  /* Brand (teal) */
+  --primary: #0f766e;
+  --primary-hover: #0b5d56;
+  --primary-foreground: #ffffff;
+  --accent: #eaf4f2;
+  --accent-foreground: #0f766e;
+
+  /* Neutral secondary (e.g. Viewer role chip, "Back" buttons) */
+  --secondary: #eef1f1;
+  --secondary-foreground: #6b7472;
+
+  /* Muted surfaces (table header row, disabled-ish backgrounds) */
+  --muted: #f7f9f9;
+
+  /* Status */
+  --success: #157347;
+  --success-bg: #e7f5ee;
+  --warning: #a15c07;
+  --warning-bg: #fdf3e3;
+  --destructive: #c02626;
+  --destructive-foreground: #ffffff;
+  --destructive-bg: #fdeaea;
+  --destructive-border: #f6cccc;
+  --destructive-text: #a71f1f;
+
+  /* Borders */
+  --border: #e2e6e7;
+  --input: #d7dbdd;
+  --divider: #eef1f1;
+  --ring: #0f766e;
+
+  /* Typography */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
+.dark {
+  --background: #0e1413;
+  --card: #16201f;
+  --popover: #16201f;
+
+  --foreground: #eceff0;
+  --card-foreground: #eceff0;
+  --popover-foreground: #eceff0;
+  --muted-foreground: #9aa3a1;
+  --subtle-foreground: #6b7472;
+  --table-header-foreground: #7d8785;
+
+  --primary: #2dd4bf;
+  --primary-hover: #5eead4;
+  --primary-foreground: #052e2b;
+  --accent: #123330;
+  --accent-foreground: #5eead4;
+
+  --secondary: #1f2928;
+  --secondary-foreground: #9aa3a1;
+
+  --muted: #182120;
+
+  --success: #4ade80;
+  --success-bg: rgba(74, 222, 128, 0.12);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --destructive: #f87171;
+  --destructive-foreground: #2b0a0a;
+  --destructive-bg: rgba(248, 113, 113, 0.12);
+  --destructive-border: rgba(248, 113, 113, 0.3);
+  --destructive-text: #fca5a5;
+
+  --border: #263030;
+  --input: #33403e;
+  --divider: #1f2928;
+  --ring: #2dd4bf;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-table-header-foreground: var(--table-header-foreground);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-bg: var(--destructive-bg);
+  --color-destructive-border: var(--destructive-border);
+  --color-destructive-text: var(--destructive-text);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-divider: var(--divider);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  color: var(--text-h);
+/* Tabular figures for amounts, IDs, emails — matches the design's .vd-num class. */
+.tabular-nums-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
 }

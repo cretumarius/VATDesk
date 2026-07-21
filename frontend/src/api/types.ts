@@ -5,6 +5,29 @@ export interface HealthResponse {
   databaseConnected: boolean
 }
 
+export type UserRole = 'Admin' | 'Viewer'
+
+export interface LoginRequestDto {
+  email: string
+  password: string
+}
+
+export interface LoginResponseDto {
+  token: string
+  expiresAt: string
+  userId: string
+  email: string
+  name: string
+  role: UserRole
+}
+
+export interface MeDto {
+  userId: string
+  email: string
+  name: string
+  role: UserRole
+}
+
 export type VatKind = 'Percentage' | 'ZeroRated' | 'Exempt' | 'ReverseCharge'
 
 export interface VatCategoryDto {
