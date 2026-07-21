@@ -40,15 +40,25 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
     limit — just not filterable.)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
 - [x] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
-- [ ] Phase 7 — Packaging: Dockerfile/compose, Railway deploy, README, AI conversation log export
+- [x] Phase 7 — Packaging: Dockerfile/compose, Railway deploy, README, AI conversation log export
 
 ## Deliverables checklist (from the challenge)
 
-- [ ] Running deployment (Railway URL) reviewers can test instantly
-- [ ] GitHub repository URL
-- [ ] AI conversation log (planning session + Claude Code sessions), unedited
-- [ ] README: run instructions, sample files, demo credentials, architecture diagram,
-      "how to add a country" section, AI-assisted workflow section (skill + MCPs)
+- [ ] Running deployment (Railway URL) reviewers can test instantly — **pending manual
+      step**: the app is live and verified working at
+      <https://vatdesk-production.up.railway.app> (README's "Try it now" links to it),
+      but confirming this is the final URL to submit — and that the Railway trial
+      project stays up through review — is a decision only the user can make, not
+      something to check off unilaterally.
+- [x] GitHub repository URL — <https://github.com/cretumarius/VATDesk> (stable, verified
+      via `git remote -v`)
+- [ ] AI conversation log (planning session + Claude Code sessions), unedited —
+      **pending manual step**: `docs/ai-log/README.md` scaffolds the structure and the
+      phase/commit mapping, but the actual exported session files have to be added by
+      hand — only the user can export them.
+- [x] README: run instructions, sample files, demo credentials, architecture diagram,
+      "how to add a country" section, AI-assisted workflow section (skill + MCPs) —
+      fully rewritten this session, replacing every TODO from the Phase 0 skeleton.
 
 ## AI toolchain story (for submission notes)
 
