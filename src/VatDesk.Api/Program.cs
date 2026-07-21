@@ -20,6 +20,12 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Global safety net (security checklist item 1): caps every request, not just the ones
+// that remember to add [RequestSizeLimit]. Upload also sets that attribute explicitly —
+// belt and suspenders, not a substitute for this.
+builder.WebHost.ConfigureKestrel(options =>
+    options.Limits.MaxRequestBodySize = ParserFactory.MaxFileSizeBytes);
+
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
