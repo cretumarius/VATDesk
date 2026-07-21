@@ -167,3 +167,42 @@ location instead.
 CategoryBreakdownTable, ReportSkeleton). No new primitives were needed this session —
 the report view composed entirely from Card/Badge/Button plus new feature-specific
 components, per the "extend, never fork" rule.
+
+## Technical improvements
+
+- **Axios migration** (pure frontend refactor): every `fetch()` call in `frontend/src`
+  replaced with a single central axios client (`api/client.ts`) — request interceptor
+  attaches auth from the same token source `AuthContext` already used, response
+  interceptor normalizes every rejection into one `ApiError` shape (status, title,
+  detail, problemDetails — network/timeout failures included, as status `0`) and
+  preserves the exact existing 401-redirect/login-exemption behavior. Zero observable
+  behavior change, plus one explicit addition: a minimal hand-rolled session cache
+  (`api/cache.ts`, no TanStack Query — noted as a possible future improvement) for
+  `GET /api/countries/HU/vat-categories` and `GET /api/auth/me`, invalidated on logout
+  and on any 401. `git grep "fetch(" frontend/src` returns nothing; axios is imported
+  only in `client.ts`.
+
+### Migration checklist (ticked)
+
+| # | Endpoint | File(s) | Ticked |
+|---|---|---|---|
+| 1 | `POST /api/auth/login` | `client.ts` (`loginRequest`) | ✅ `client.ts` |
+| 2 | `GET /api/auth/me` | `client.ts` (`getMe`) | ✅ `client.ts` — now cached; still unused by any page (see below) |
+| 3 | `GET /api/health` | `client.ts` (`getHealth`) | ✅ `client.ts` — still unused by any page (see below) |
+| 4 | `GET /api/declarations` | `client.ts` (`getDeclarations`) → `DashboardPage` | ✅ `client.ts` |
+| 5 | `GET /api/declarations/{id}` | `client.ts` (`getDeclaration`) → `DeclarationReportPage` | ✅ `client.ts` |
+| 6 | `POST /api/declarations` | `client.ts` (`uploadDeclaration`) → `UploadPage.process` | ✅ `client.ts` + `UploadPage.tsx` (migration-trap fix: `instanceof ApiError` → `status !== 0`) |
+| 7 | `GET /api/countries/HU/vat-categories` | `client.ts` (`getVatCategories`) → `DeclarationReportPage` | ✅ `client.ts` + `cache.ts` (now the real cache, replacing the old ad-hoc per-country `Map`) |
+| 8 | `GET /api/samples/{name}` | `client.ts` (`fetchSampleBlob`/`fetchSampleAsFile`/`downloadSample`) → `DropZone`, `FormatHintTabs`, `UploadErrorScreen` | ✅ `client.ts` (`responseType: 'blob'`) |
+| 9 | `GET /api/declarations/{id}/pdf` | `client.ts` (`downloadDeclarationPdf`) → `DeclarationReportPage`, `DeclarationsTable` | ✅ `client.ts` (`responseType: 'blob'`) |
+
+### Found during refactor (not fixed — flagging per session instructions)
+
+- `getMe()` and `getHealth()` are fully implemented in the API client but **never called
+  from any page or component** — dead code that predates this session. Migrated to axios
+  (and `getMe` now goes through the cache) for consistency, but left unused as found;
+  not something a pure refactor session should start wiring into new call sites.
+- `FormatHintTabs.tsx` and `UploadErrorScreen.tsx`'s `handleDownload` have a `try/finally`
+  with no `catch` — if `downloadSample` throws, it's an unhandled promise rejection
+  (console warning, `downloading` state still resets via `finally`). Pre-existing,
+  unchanged by the migration; left as-is per "don't fix silently."
