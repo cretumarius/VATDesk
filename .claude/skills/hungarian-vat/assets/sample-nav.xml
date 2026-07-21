@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/3.0/data">
+  <invoiceNumber>INV-2026-201</invoiceNumber>
+  <invoiceIssueDate>2026-06-18</invoiceIssueDate>
+  <supplierTaxNumber>12345678-2-41</supplierTaxNumber>
+  <customerName>Horváth Kereskedelmi Kft.</customerName>
+  <invoiceDirection>OUTBOUND</invoiceDirection>
+  <invoiceLines>
+    <line>
+      <lineNetAmount>150000</lineNetAmount>
+      <lineVatData>
+        <vatPercentage>0.27</vatPercentage>
+        <lineVatAmount>40500</lineVatAmount>
+      </lineVatData>
+      <lineGrossAmount>190500</lineGrossAmount>
+    </line>
+    <line>
+      <lineNetAmount>20000</lineNetAmount>
+      <lineVatData>
+        <vatPercentage>0.05</vatPercentage>
+        <lineVatAmount>1000</lineVatAmount>
+      </lineVatData>
+      <lineGrossAmount>21000</lineGrossAmount>
+    </line>
+    <line>
+      <lineNetAmount>50000</lineNetAmount>
+      <lineVatData>
+        <vatExemption case="TAM"/>
+        <lineVatAmount>0</lineVatAmount>
+      </lineVatData>
+      <lineGrossAmount>50000</lineGrossAmount>
+    </line>
+  </invoiceLines>
+</InvoiceData>
