@@ -34,8 +34,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
   - [x] 4.3 — Report view (summary cards, validation panel, category breakdown)
   - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
-  - [ ] Entra ID external login (stretch — only if time allows, must not block demo)
-- [ ] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
+- [x] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
 - [ ] Phase 7 — Packaging: Dockerfile/compose, Azure deploy, README, AI conversation log export
 
 ## Deliverables checklist (from the challenge)
@@ -124,6 +123,40 @@ GET /api/samples/{clean.csv,invalid.csv,nav.xml} (any authenticated user)
 - The dashboard's empty state (`DashboardPage.tsx`) still always renders regardless of
   whether declarations exist; 4.4 is what replaces it with the real table + wires
   `GET /api/declarations`.
+
+## Phase 6 summary (security audit + hardening)
+
+Full verdict table, evidence, and known accepted risks: `docs/SECURITY.md`.
+
+**Already in place, verified correct** (no change needed): upload size limits
+(3 layers), XXE hardening (verified via live mutation test), decimal/invariant-culture
+parsing, role-based authorization on every endpoint, login rate limiting, generic
+error-handling *behavior* (status code + no leaked detail).
+
+**Actually fixed this session**:
+
+- Kestrel's global `MaxRequestBodySize` was never set (only the per-endpoint attribute).
+- `docker-compose.yml` committed a real, working JWT fallback signing key — removed;
+  `JWT_KEY` is now required, no default.
+- JWT validation didn't pin `ValidAlgorithms` — added.
+- Upload had zero rate limiting — added (20/min per user), which also surfaced and fixed
+  a middleware-ordering bug (`UseRateLimiter` ran before `UseAuthentication`, so per-user
+  partitioning would have silently degraded to per-IP).
+- No CORS policy existed at all — added, locked to zero origins by default.
+- No security headers existed at all — added `X-Content-Type-Options`, `X-Frame-Options`,
+  a scoped CSP, and `UseHsts()` + `UseForwardedHeaders()` (needed because the Azure
+  deployment target terminates TLS at the platform edge).
+- The CSP required moving the Vite build's one inline script to an external file
+  (`frontend/public/theme-init.js`) so `script-src 'self'` wouldn't silently break it.
+- `GlobalExceptionHandler` was silently sending `application/json` instead of
+  `application/problem+json` for unhandled-exception responses (found while writing the
+  Stage C test for this exact behavior).
+- `xunit`/`xunit.runner.visualstudio` bumped to clear a transitive vulnerable-package
+  advisory (test-only, never shipped, but a real fixable finding from
+  `dotnet list package --vulnerable`).
+
+**N/A, documented**: CSV export doesn't exist in v1 — comment left at the natural future
+location instead.
 
 ## Shared component inventory (`frontend/src/components/ui/`)
 
