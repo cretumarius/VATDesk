@@ -53,9 +53,14 @@ export function UploadPage() {
     } catch (err) {
       clearTimers()
 
-      if (err instanceof ApiError) {
+      // status 0 is the client's own network/timeout bucket (axios never got a server
+      // response at all) — everything else came from the server and gets the existing
+      // 401/403/other handling. Was previously "not an ApiError"; the client now
+      // normalizes network failures into the same ApiError shape, so this has to check
+      // status instead of the type itself.
+      if (err instanceof ApiError && err.status !== 0) {
         if (err.status === 401) {
-          // apiFetch already cleared the session and is redirecting to /login.
+          // The client already cleared the session and is redirecting to /login.
           return
         }
         if (err.status === 403) {
@@ -66,7 +71,7 @@ export function UploadPage() {
         return
       }
 
-      // Not an ApiError: fetch itself failed (offline, DNS, server unreachable).
+      // Network/timeout failure (offline, DNS, server unreachable).
       addToast('error', 'Upload failed', 'Could not reach the server. Check your connection and try again.', {
         label: 'Retry',
         onClick: () => process(file),
