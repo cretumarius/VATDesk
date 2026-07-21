@@ -31,7 +31,7 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 - [ ] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
   - [x] 4.1 — Auth infrastructure + `/login` + app shell + dashboard empty state
   - [x] 4.2 — Upload flow (drag/drop, sample files, processing states)
-  - [ ] 4.3 — Report view (summary cards, validation panel, category breakdown)
+  - [x] 4.3 — Report view (summary cards, validation panel, category breakdown)
   - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
 - [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
   - [ ] Entra ID external login (stretch — only if time allows, must not block demo)
@@ -85,3 +85,52 @@ GET /api/samples/{clean.csv,invalid.csv,nav.xml} (any authenticated user)
   structural parse failure); no canonical corrupt-file skill asset exists, so it's
   "Use sample with warnings" (real sample-invalid.csv) instead, demonstrating
   CompletedWithWarnings with real data.
+- **Money formatting: comma vs. space grouping** (4.3): the design mockup's own fake
+  `fmt()` helper uses comma/en-US-style grouping ("94,300"). The skill's explicit hard
+  rule #3 and this session's prompt both specify `Intl.NumberFormat('hu-HU')`, which
+  groups with a (non-breaking) space ("94 300") and — per real Hungarian CLDR data —
+  does not group 4-digit numbers at all (e.g. `2500`, not `2 500`). Skill wins; the
+  report renders hu-HU formatting throughout, not the mockup's comma style.
+- **Report header "Period" field** (4.3): the design shows a hardcoded "Period · 2025 Q2
+  (Apr–Jun)" line. There is no period/quarter concept anywhere in the data model
+  (`DeclarationDto` has no date range), so it was dropped rather than fabricated. Open
+  question below for whether to add one.
+- **Category display name vs. registry text** (4.3): design shows "Exempt (subjective)"
+  for AAM; the registry's canonical `DisplayNameEn` is "Personal (subjective)
+  exemption". Skill wins — the report renders the registry text verbatim (a
+  presentational regex only strips a redundant trailing "(NN%)" already shown in the
+  adjacent code badge, e.g. "Standard rate (27%)" → "Standard rate").
+- **Negative Net VAT Payable (reclaimable)** (4.3): the design mockup only demonstrates
+  the positive/payable case. The report keeps the same teal card treatment for a
+  negative value — the minus sign comes naturally from `Intl.NumberFormat`, and the
+  caption swaps to "reclaimable from NAV". Not yet exercised by a real sample file.
+
+## Open questions for a future session
+
+- Should a period/quarter field be added (backend-derived from `CreatedAt`, or a new
+  input at upload time), or is the report meant to just be "as of processing date"
+  with no period concept? See the "Period" design gap above.
+
+## What Phase 4.4 needs
+
+- `GET /api/declarations` already returns `DeclarationListItemDto[]` (id, filename,
+  format, country, status, the three VAT totals, valid/warning/error row counts,
+  createdAt) — no backend changes anticipated for a basic table.
+- `declarationStatusLabel`/`declarationStatusBadgeVariant` (`lib/declaration-status.ts`)
+  and `formatAmount`/`formatDate` (`lib/format.ts`) are already shared and ready to
+  reuse in a list/table view.
+- `downloadDeclarationPdf(id)` (`api/client.ts`) already streams+saves a PDF — reusable
+  for a per-row download action in the history table without new client code.
+- The dashboard's empty state (`DashboardPage.tsx`) still always renders regardless of
+  whether declarations exist; 4.4 is what replaces it with the real table + wires
+  `GET /api/declarations`.
+
+## Shared component inventory (`frontend/src/components/ui/`)
+
+`alert`, `avatar`, `badge`, `button`, `card`, `dropdown-menu`, `input`, `label`, `tabs`,
+`theme-toggle`, `toast`, `tooltip` — plus feature components in `components/upload/`
+(DropZone, FileCard, FormatHintTabs, ProcessingScreen, UploadErrorScreen) and
+`components/report/` (ReportHeader, SummaryCards, ValidationPanel,
+CategoryBreakdownTable, ReportSkeleton). No new primitives were needed this session —
+the report view composed entirely from Card/Badge/Button plus new feature-specific
+components, per the "extend, never fork" rule.
