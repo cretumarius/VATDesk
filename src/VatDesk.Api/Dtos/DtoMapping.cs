@@ -56,5 +56,6 @@ internal static class DtoMapping
         entity.ValidRows,
         entity.WarningRows,
         entity.ErrorRows,
-        entity.CreatedAt);
+        entity.CreatedAt,
+        entity.User?.DisplayName);
 }

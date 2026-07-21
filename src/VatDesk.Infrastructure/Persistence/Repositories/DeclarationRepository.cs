@@ -15,12 +15,13 @@ public class DeclarationRepository(VatDeskDbContext dbContext)
         SourceFormat sourceFormat,
         string countryCode,
         DeclarationSummary summary,
+        Guid? userId = null,
         CancellationToken cancellationToken = default)
     {
         var entity = new DeclarationEntity
         {
             Id = Guid.NewGuid(),
-            UserId = null, // no auth this session (Phase 5); every upload is anonymous for now
+            UserId = userId,
             SourceFilename = sourceFilename,
             SourceFormat = sourceFormat,
             CountryCode = countryCode,
@@ -70,6 +71,7 @@ public class DeclarationRepository(VatDeskDbContext dbContext)
     public Task<List<DeclarationEntity>> ListAsync(CancellationToken cancellationToken = default) =>
         dbContext.Declarations
             .AsNoTracking()
+            .Include(d => d.User)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(cancellationToken);
 }

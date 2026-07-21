@@ -47,4 +47,5 @@ public record DeclarationListItemDto(
     int ValidRows,
     int WarningRows,
     int ErrorRows,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? CreatedByName);

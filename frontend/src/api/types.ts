@@ -96,4 +96,5 @@ export interface DeclarationListItemDto {
   warningRows: number
   errorRows: number
   createdAt: string
+  createdByName: string | null
 }

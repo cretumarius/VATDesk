@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VatDesk.Api.Dtos;
@@ -61,7 +62,8 @@ public class DeclarationsController(
         }
 
         var summary = strategy.BuildDeclaration(parseResult.Lines, parseResult.Issues, parseResult.Format);
-        var entity = await repository.SaveAsync(file.FileName, parseResult.Format, strategy.CountryCode, summary, cancellationToken);
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var entity = await repository.SaveAsync(file.FileName, parseResult.Format, strategy.CountryCode, summary, userId, cancellationToken);
 
         return Ok(entity.ToDto(registry));
     }

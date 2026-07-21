@@ -1,5 +1,13 @@
 import { clearSession, getToken } from '@/lib/auth-storage'
-import type { DeclarationDto, HealthResponse, LoginRequestDto, LoginResponseDto, MeDto, VatCategoryDto } from './types'
+import type {
+  DeclarationDto,
+  DeclarationListItemDto,
+  HealthResponse,
+  LoginRequestDto,
+  LoginResponseDto,
+  MeDto,
+  VatCategoryDto,
+} from './types'
 
 export type SampleFileName = 'clean.csv' | 'invalid.csv' | 'nav.xml'
 
@@ -83,6 +91,10 @@ export async function loginRequest(credentials: LoginRequestDto): Promise<LoginR
 
 export function getMe(): Promise<MeDto> {
   return apiFetch<MeDto>('/api/auth/me')
+}
+
+export function getDeclarations(): Promise<DeclarationListItemDto[]> {
+  return apiFetch<DeclarationListItemDto[]>('/api/declarations')
 }
 
 export function getDeclaration(id: string): Promise<DeclarationDto> {

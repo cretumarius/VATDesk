@@ -116,6 +116,25 @@ public class DeclarationsApiTests : IClassFixture<VatDeskWebApplicationFactory>
     }
 
     [Fact]
+    public async Task List_AfterUpload_IncludesTheNewDeclarationAttributedToUploader()
+    {
+        using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
+
+        var uploadResponse = await UploadAsync(client, "sample-clean.csv", "text/csv");
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<DeclarationDto>(JsonOptions);
+
+        var listResponse = await client.GetAsync("/api/declarations");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        var list = await listResponse.Content.ReadFromJsonAsync<List<DeclarationListItemDto>>(JsonOptions);
+        var item = Assert.Single(list!, d => d.Id == uploaded!.Id);
+
+        Assert.Equal("sample-clean.csv", item.SourceFilename);
+        Assert.Equal(43700m, item.NetVatPayable);
+        Assert.Equal("Nagy Katalin", item.CreatedByName);
+    }
+
+    [Fact]
     public async Task GetPdf_AfterUpload_ReturnsNonEmptyApplicationPdf()
     {
         using var client = await _factory.CreateAuthenticatedClientAsync(UserRole.Admin);
