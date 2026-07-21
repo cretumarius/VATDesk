@@ -23,10 +23,13 @@ services:
       - "8080:8080"
     environment:
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-vatdesk};Username=${POSTGRES_USER:-vatdesk};Password=${POSTGRES_PASSWORD:-vatdesk}"
-      # Demo-only fallback (same tradeoff as the Postgres credentials above): lets
-      # `docker compose up` work out of the box for reviewers. Any real deployment sets
-      # JWT_KEY via a real secret (Azure App Settings etc.) — never rely on this default.
-      Jwt__Key: "${JWT_KEY:-lvFunuusnSO2w4AOAvJh7IVnyx4+AlnqpM78khacXx++Bl4a3flVQIAL15m8dY4u}"
+      # No fallback here on purpose (security checklist #11: no secrets in git). Unlike the
+      # Postgres credentials above, a JWT signing key lets anyone who has it forge Admin
+      # tokens against any deployment that reuses it — a committed default, even a
+      # "demo-only" one, is a real usable secret. Copy .env.example to .env and set a real
+      # generated JWT_KEY (`openssl rand -base64 48`) before running `docker compose up`;
+      # Program.cs fails fast with a clear message if it's missing or too short.
+      Jwt__Key: "${JWT_KEY}"
     depends_on:
       postgres:
         condition: service_healthy

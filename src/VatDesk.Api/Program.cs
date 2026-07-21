@@ -80,6 +80,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
+            // Explicit pin (security checklist #4): only the one algorithm we ever sign
+            // with is accepted for verification — no algorithm-confusion surface, even
+            // though a symmetric-only key already rules out the classic RS256->HS256 attack.
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
         };
     });
 
