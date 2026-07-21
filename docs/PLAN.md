@@ -29,7 +29,12 @@ rules live in the project skill at `.claude/skills/hungarian-vat/`.
 - [x] Phase 2 — Data contract + sample files (locked; see skill `references/data-contract.md`; samples in skill `assets/`)
 - [x] Phase 3 — Backend: Core models → parsers → validation (V1–V8) → HU strategy → PDF → API endpoints
 - [ ] Phase 4 — Frontend: login, dashboard/history, upload, report view, PDF download, role-aware UI
-- [ ] Phase 5 — Auth & authorization (baseline JWT + roles; Entra ID if time allows)
+  - [x] 4.1 — Auth infrastructure + `/login` + app shell + dashboard empty state
+  - [ ] 4.2 — Upload flow (drag/drop, sample files, processing states)
+  - [ ] 4.3 — Report view (summary cards, validation panel, category breakdown)
+  - [ ] 4.4 — Dashboard/history (declarations table, filters, PDF download from list)
+- [x] Phase 5 — Auth & authorization baseline (JWT + roles) — done, folded into Phase 4.1
+  - [ ] Entra ID external login (stretch — only if time allows, must not block demo)
 - [ ] Phase 6 — Security hardening (11-point checklist in skill `references/architecture.md`)
 - [ ] Phase 7 — Packaging: Dockerfile/compose, Azure deploy, README, AI conversation log export
 
